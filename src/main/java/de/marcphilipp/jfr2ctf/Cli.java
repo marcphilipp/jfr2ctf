@@ -9,6 +9,7 @@ import picocli.CommandLine.PicocliException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Set;
 
 import static org.apache.commons.io.FilenameUtils.removeExtension;
@@ -35,6 +36,7 @@ public class Cli {
     private static void run(Args args) throws IOException {
         var filter = ImmutableRecordedEventFilter.builder()
                 .includedEventTypes(args.includedEventTypes)
+                .minDuration(args.minDurationMillis == null ? null : Duration.ofMillis(args.minDurationMillis))
                 .build();
         var ctfFile = args.ctfFile == null
                 ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
@@ -49,8 +51,12 @@ public class Cli {
         boolean help;
 
         @Nullable
-        @Option(names = {"--include-events"}, description = "events to include (defaults to all)")
+        @Option(names = {"--include-events"}, description = "event types to include (defaults to all)")
         Set<String> includedEventTypes;
+
+        @Nullable
+        @Option(names = {"--min-duration"}, description = "minimum event duration (in millis)")
+        Long minDurationMillis;
 
         @Parameters(arity = "1", index = "0", paramLabel = "JFR_FILE", description = "JFR file to convert")
         Path jfrFile;
