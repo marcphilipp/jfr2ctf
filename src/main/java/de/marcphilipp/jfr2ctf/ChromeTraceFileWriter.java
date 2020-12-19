@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import static com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET;
 import static com.fasterxml.jackson.core.JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM;
 
-public class ChromeTraceFileWriter implements Closeable {
+class ChromeTraceFileWriter implements Closeable {
 
     private final JsonMapper jsonMapper = JsonMapper.builder()
             .disable(AUTO_CLOSE_TARGET)
@@ -21,13 +21,13 @@ public class ChromeTraceFileWriter implements Closeable {
     private final BufferedWriter out;
     private boolean first = true;
 
-    public ChromeTraceFileWriter(Path file) throws IOException {
+    ChromeTraceFileWriter(Path file) throws IOException {
         out = Files.newBufferedWriter(file);
+        out.write("[");
     }
 
     void write(ChromeTraceEvent event) throws IOException {
         if (first) {
-            out.write("[");
             first = false;
         } else {
             out.write(",\n");

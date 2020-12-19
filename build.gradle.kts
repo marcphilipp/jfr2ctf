@@ -31,7 +31,10 @@ application {
 
 tasks {
     compileJava {
-        options.compilerArgs.add("-Aimmutables.gradle.incremental")
+        options.apply {
+            compilerArgs.add("-Aimmutables.gradle.incremental")
+            release.set(15)
+        }
     }
     test {
         useJUnitPlatform()
