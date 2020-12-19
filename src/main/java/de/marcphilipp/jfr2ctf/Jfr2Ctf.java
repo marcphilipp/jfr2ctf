@@ -6,11 +6,11 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
-import jdk.jfr.consumer.RecordingFile;
 import org.apache.commons.lang3.ObjectUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
@@ -61,34 +61,38 @@ public class Jfr2Ctf {
         var ctfFile = args.ctfFile == null
                 ? args.jfrFile.resolveSibling(substringBeforeLast(args.jfrFile.getFileName().toString(), ".") + ".json")
                 : args.ctfFile;
-        var seenThreadIds = new HashSet<>();
-        long pid = 0;
-        try (var reader = new RecordingFile(args.jfrFile); var writer = new ChromeTraceFileWriter(ctfFile)) {
-            while (reader.hasMoreEvents()) {
-                var event = reader.readEvent();
-                if (eventTypeFilter.test(event.getEventType())) {
-                    Long threadId = null;
-                    RecordedThread thread = event.getThread();
-                    if (thread != null) {
-                        threadId = thread.getJavaThreadId();
-                        String threadName = ObjectUtils.firstNonNull(thread.getJavaName(), thread.getOSName());
-                        RecordedThreadGroup threadGroup = thread.getThreadGroup();
-                        if (threadGroup != null && threadGroup.getName() != null) {
-                            threadName += " (" + threadGroup.getName() + ")";
-                        }
-                        if (seenThreadIds.add(threadId) && threadName != null) {
-                            writer.write(ImmutableChromeTraceEvent.builder()
-                                    .processId(pid)
-                                    .threadId(threadId)
-                                    .phaseType(PhaseType.METADATA)
-                                    .name("thread_name")
-                                    .putArguments("name", threadName)
-                                    .build());
-                        }
-                    }
-                    writer.write(toChromeTraceEvent(threadId, event));
+        var seenThreadIds = new HashSet<Long>();
+        try (var reader = RecordedEventIterator.stream(args.jfrFile); var writer = new ChromeTraceFileWriter(ctfFile)) {
+            reader
+                    .filter(event -> eventTypeFilter.test(event.getEventType()))
+                    .forEach(event -> writeRecordedEventToChromeTraceFile(event, seenThreadIds, writer));
+        }
+    }
+
+    private void writeRecordedEventToChromeTraceFile(RecordedEvent event, Set<Long> seenThreadIds, ChromeTraceFileWriter writer) {
+        try {
+            Long threadId = null;
+            RecordedThread thread = event.getThread();
+            if (thread != null) {
+                threadId = thread.getJavaThreadId();
+                String threadName = ObjectUtils.firstNonNull(thread.getJavaName(), thread.getOSName());
+                RecordedThreadGroup threadGroup = thread.getThreadGroup();
+                if (threadGroup != null && threadGroup.getName() != null) {
+                    threadName += " (" + threadGroup.getName() + ")";
+                }
+                if (seenThreadIds.add(threadId) && threadName != null) {
+                    writer.write(ImmutableChromeTraceEvent.builder()
+                            .processId(0)
+                            .threadId(threadId)
+                            .phaseType(PhaseType.METADATA)
+                            .name("thread_name")
+                            .putArguments("name", threadName)
+                            .build());
                 }
             }
+            writer.write(toChromeTraceEvent(threadId, event));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
