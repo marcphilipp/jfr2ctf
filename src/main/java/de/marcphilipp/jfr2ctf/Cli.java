@@ -11,7 +11,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 public class Cli {
@@ -36,7 +39,12 @@ public class Cli {
     private static void run(Args args) throws IOException {
         var filter = ImmutableRecordedEventFilter.builder()
                 .includedEventTypes(args.includedEventTypes)
-                .minDuration(args.minDurationMillis == null ? null : Duration.ofMillis(args.minDurationMillis))
+                .excludedThreadNames(args.excludedThreadNames == null
+                        ? null
+                        : args.excludedThreadNames.stream().map(Pattern::compile).collect(toSet()))
+                .minDuration(args.minDurationMillis == null
+                        ? null
+                        : Duration.ofMillis(args.minDurationMillis))
                 .build();
         var ctfFile = args.ctfFile == null
                 ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
@@ -53,6 +61,10 @@ public class Cli {
         @Nullable
         @Option(names = {"--include-events"}, description = "event types to include (defaults to all)")
         Set<String> includedEventTypes;
+
+        @Nullable
+        @Option(names = {"--exclude-threads"}, description = "thread names to exclude (defaults to none) [regex]")
+        Set<String> excludedThreadNames;
 
         @Nullable
         @Option(names = {"--min-duration"}, description = "minimum event duration (in millis)")
