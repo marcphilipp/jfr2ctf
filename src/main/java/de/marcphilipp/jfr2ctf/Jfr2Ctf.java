@@ -1,15 +1,11 @@
 package de.marcphilipp.jfr2ctf;
 
 import jdk.jfr.EventType;
-import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Predicate;
-
-import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 public class Jfr2Ctf {
 
@@ -21,7 +17,7 @@ public class Jfr2Ctf {
                 CommandLine.usage(cliArgs, System.out);
                 return;
             }
-            new Jfr2Ctf().convertJfrToCtf(cliArgs);
+            convertJfrToCtf(cliArgs);
         } catch (CommandLine.PicocliException e) {
             System.err.println(e.getMessage());
             System.err.println();
@@ -30,27 +26,20 @@ public class Jfr2Ctf {
         }
     }
 
-    private void convertJfrToCtf(CliArgs args) throws IOException {
+    private static void convertJfrToCtf(CliArgs args) throws IOException {
         var eventTypeFilter = toEventTypeFilter(args);
         var eventConverters = List.of(new ThreadMetadataEventConverter(), new CompleteEventConverter());
-        try (var reader = RecordedEventIterator.stream(args.jfrFile);
-             var writer = newChromeTraceFileWriter(args)
+        try (var recordedEvents = RecordedEventIterator.stream(args.jfrFile);
+             var chromeTraceFileWriter = new ChromeTraceFileWriter(args.resolveCtfFile())
         ) {
-            reader
+            recordedEvents
                     .filter(event -> eventTypeFilter.test(event.getEventType()))
-                    .flatMap(event -> eventConverters.stream().map(it -> it.apply(event)).filter(Objects::nonNull))
-                    .forEach(writer::write);
+                    .flatMap(event -> EventConverter.applyAll(eventConverters, event))
+                    .forEach(chromeTraceFileWriter::write);
         }
     }
 
-    private ChromeTraceFileWriter newChromeTraceFileWriter(CliArgs args) throws IOException {
-        var file = args.ctfFile == null
-                ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
-                : args.ctfFile;
-        return new ChromeTraceFileWriter(file);
-    }
-
-    private Predicate<EventType> toEventTypeFilter(CliArgs args) {
+    private static Predicate<EventType> toEventTypeFilter(CliArgs args) {
         return args.eventTypes == null
                 ? __ -> true
                 : eventType -> args.eventTypes.contains(eventType.getName());
