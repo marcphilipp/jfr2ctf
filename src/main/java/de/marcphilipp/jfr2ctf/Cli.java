@@ -50,6 +50,7 @@ public class Cli {
                 ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
                 : args.ctfFile;
         new Jfr2CtfConverter(filter).convert(args.jfrFile, ctfFile);
+        System.out.println("Wrote Chrome trace file to " + ctfFile);
     }
 
     @Command(name = "jfr2ctf")
