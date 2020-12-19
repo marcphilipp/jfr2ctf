@@ -22,11 +22,12 @@ dependencies {
 
     implementation("info.picocli:picocli:4.5.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.3")
+    implementation("org.apache.commons:commons-lang3:3.11")
     implementation("commons-io:commons-io:2.8.0")
 }
 
 application {
-    mainClass.set("de.marcphilipp.jfr2ctf.Jfr2Ctf")
+    mainClass.set("de.marcphilipp.jfr2ctf.Cli")
 }
 
 tasks {
