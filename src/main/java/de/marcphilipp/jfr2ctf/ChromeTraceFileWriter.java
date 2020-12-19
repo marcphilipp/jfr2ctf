@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -26,13 +27,17 @@ class ChromeTraceFileWriter implements Closeable {
         out.write("[");
     }
 
-    void write(ChromeTraceEvent event) throws IOException {
-        if (first) {
-            first = false;
-        } else {
-            out.write(",\n");
+    void write(ChromeTraceEvent event) {
+        try {
+            if (first) {
+                first = false;
+            } else {
+                out.write(",\n");
+            }
+            jsonMapper.writeValue(out, event);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        jsonMapper.writeValue(out, event);
     }
 
     @Override

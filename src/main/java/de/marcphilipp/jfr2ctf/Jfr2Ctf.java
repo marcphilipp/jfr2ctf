@@ -10,15 +10,16 @@ import org.apache.commons.lang3.ObjectUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static java.time.temporal.ChronoUnit.MICROS;
 import static org.apache.commons.lang3.StringUtils.substringBeforeLast;
@@ -65,35 +66,34 @@ public class Jfr2Ctf {
         try (var reader = RecordedEventIterator.stream(args.jfrFile); var writer = new ChromeTraceFileWriter(ctfFile)) {
             reader
                     .filter(event -> eventTypeFilter.test(event.getEventType()))
-                    .forEach(event -> writeRecordedEventToChromeTraceFile(event, seenThreadIds, writer));
+                    .flatMap(event -> convertEvent(event, seenThreadIds))
+                    .forEach(writer::write);
         }
     }
 
-    private void writeRecordedEventToChromeTraceFile(RecordedEvent event, Set<Long> seenThreadIds, ChromeTraceFileWriter writer) {
-        try {
-            Long threadId = null;
-            RecordedThread thread = event.getThread();
-            if (thread != null) {
-                threadId = thread.getJavaThreadId();
-                String threadName = ObjectUtils.firstNonNull(thread.getJavaName(), thread.getOSName());
-                RecordedThreadGroup threadGroup = thread.getThreadGroup();
-                if (threadGroup != null && threadGroup.getName() != null) {
-                    threadName += " (" + threadGroup.getName() + ")";
-                }
-                if (seenThreadIds.add(threadId) && threadName != null) {
-                    writer.write(ImmutableChromeTraceEvent.builder()
-                            .processId(0)
-                            .threadId(threadId)
-                            .phaseType(PhaseType.METADATA)
-                            .name("thread_name")
-                            .putArguments("name", threadName)
-                            .build());
-                }
+    private Stream<ChromeTraceEvent> convertEvent(RecordedEvent event, Set<Long> seenThreadIds) {
+        var result = new ArrayList<ChromeTraceEvent>();
+        Long threadId = null;
+        RecordedThread thread = event.getThread();
+        if (thread != null) {
+            threadId = thread.getJavaThreadId();
+            String threadName = ObjectUtils.firstNonNull(thread.getJavaName(), thread.getOSName());
+            RecordedThreadGroup threadGroup = thread.getThreadGroup();
+            if (threadGroup != null && threadGroup.getName() != null) {
+                threadName += " (" + threadGroup.getName() + ")";
             }
-            writer.write(toChromeTraceEvent(threadId, event));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            if (seenThreadIds.add(threadId) && threadName != null) {
+                result.add(ImmutableChromeTraceEvent.builder()
+                        .processId(0)
+                        .threadId(threadId)
+                        .phaseType(PhaseType.METADATA)
+                        .name("thread_name")
+                        .putArguments("name", threadName)
+                        .build());
+            }
         }
+        result.add(toChromeTraceEvent(threadId, event));
+        return result.stream();
     }
 
     private ChromeTraceEvent toChromeTraceEvent(Long threadId, RecordedEvent event) {
