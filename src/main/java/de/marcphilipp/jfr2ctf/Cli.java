@@ -33,13 +33,13 @@ public class Cli {
     }
 
     private static void run(Args args) throws IOException {
-        var config = ImmutableConfig.builder()
-                .includedEventTypes(args.eventTypes)
+        var filter = ImmutableRecordedEventFilter.builder()
+                .includedEventTypes(args.includedEventTypes)
                 .build();
         var ctfFile = args.ctfFile == null
                 ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
                 : args.ctfFile;
-        new Jfr2CtfConverter(config).convert(args.jfrFile, ctfFile);
+        new Jfr2CtfConverter(filter).convert(args.jfrFile, ctfFile);
     }
 
     @Command(name = "jfr2ctf")
@@ -50,7 +50,7 @@ public class Cli {
 
         @Nullable
         @Option(names = {"--include-events"}, description = "events to include (defaults to all)")
-        Set<String> eventTypes;
+        Set<String> includedEventTypes;
 
         @Parameters(arity = "1", index = "0", paramLabel = "JFR_FILE", description = "JFR file to convert")
         Path jfrFile;

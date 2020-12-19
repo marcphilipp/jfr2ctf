@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.immutables.value.Value.Immutable;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Locale;
 import java.util.Map;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
@@ -58,6 +57,7 @@ interface ChromeTraceEvent {
             this.jsonValue = jsonValue;
         }
 
+        @SuppressWarnings("unused")
         @JsonValue
         public String getJsonValue() {
             return jsonValue;
