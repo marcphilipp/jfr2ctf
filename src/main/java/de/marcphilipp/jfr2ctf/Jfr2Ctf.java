@@ -7,6 +7,7 @@ import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -59,16 +60,22 @@ public class Jfr2Ctf {
 
     private void convertJfrToCtf(CliArgs args) throws IOException {
         var eventTypeFilter = toEventTypeFilter(args);
-        var ctfFile = args.ctfFile == null
-                ? args.jfrFile.resolveSibling(substringBeforeLast(args.jfrFile.getFileName().toString(), ".") + ".json")
-                : args.ctfFile;
         var seenThreadIds = new HashSet<Long>();
-        try (var reader = RecordedEventIterator.stream(args.jfrFile); var writer = new ChromeTraceFileWriter(ctfFile)) {
+        try (var reader = RecordedEventIterator.stream(args.jfrFile);
+             var writer = newChromeTraceFileWriter(args)
+        ) {
             reader
                     .filter(event -> eventTypeFilter.test(event.getEventType()))
                     .flatMap(event -> convertEvent(event, seenThreadIds))
                     .forEach(writer::write);
         }
+    }
+
+    private ChromeTraceFileWriter newChromeTraceFileWriter(CliArgs args) throws IOException {
+        var file = args.ctfFile == null
+                ? args.jfrFile.resolveSibling(substringBeforeLast(args.jfrFile.getFileName().toString(), ".") + ".json")
+                : args.ctfFile;
+        return new ChromeTraceFileWriter(file);
     }
 
     private Stream<ChromeTraceEvent> convertEvent(RecordedEvent event, Set<Long> seenThreadIds) {
