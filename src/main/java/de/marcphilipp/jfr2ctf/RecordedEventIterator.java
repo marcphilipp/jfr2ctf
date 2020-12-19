@@ -12,9 +12,9 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class RecordedEventIterator implements Iterator<RecordedEvent> {
+class RecordedEventIterator implements Iterator<RecordedEvent> {
 
-    public static Stream<RecordedEvent> stream(Path file) throws IOException {
+    static Stream<RecordedEvent> stream(Path file) throws IOException {
         var recording = new RecordingFile(file);
         var iterator = new RecordedEventIterator(recording);
         var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
