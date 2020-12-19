@@ -1,6 +1,7 @@
 package de.marcphilipp.jfr2ctf;
 
 import jdk.jfr.EventType;
+import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static org.apache.commons.lang3.StringUtils.substringBeforeLast;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 public class Jfr2Ctf {
 
@@ -44,7 +45,7 @@ public class Jfr2Ctf {
 
     private ChromeTraceFileWriter newChromeTraceFileWriter(CliArgs args) throws IOException {
         var file = args.ctfFile == null
-                ? args.jfrFile.resolveSibling(substringBeforeLast(args.jfrFile.getFileName().toString(), ".") + ".json")
+                ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
                 : args.ctfFile;
         return new ChromeTraceFileWriter(file);
     }
