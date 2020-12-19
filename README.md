@@ -4,7 +4,7 @@ Command-line tool to convert a JFR recording to a Chrome trace file (CTF).
 
 ## Usage
 
-```sh
+```
 ./gradlew run --args="[-h] [--include-events=<eventTypes>]... JFR_FILE [CTF_FILE]"
       JFR_FILE     JFR file to convert
       [CTF_FILE]   Result file to write (defaults to JFR_FILE with json
