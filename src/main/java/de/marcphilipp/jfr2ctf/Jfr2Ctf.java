@@ -8,18 +8,12 @@ import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 import jdk.jfr.consumer.RecordingFile;
 import org.apache.commons.lang3.ObjectUtils;
-import org.jetbrains.annotations.Nullable;
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +23,6 @@ import java.util.function.Predicate;
 import static java.time.temporal.ChronoUnit.MICROS;
 import static org.apache.commons.lang3.StringUtils.substringBeforeLast;
 
-@Command(name = "jfr2ctf")
 public class Jfr2Ctf {
 
     private static final Map<String, BiFunction<RecordedEvent, String, Object>> SUPPORTED_VALUE_TYPES = Map.of(
@@ -46,44 +39,31 @@ public class Jfr2Ctf {
 
     private static final Set<String> EXCLUDED_VALUE_NAMES = Set.of("startTime", "duration");
 
-    @Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
-    boolean help;
-
-    @Nullable
-    @Option(names = {"--include-events"}, description = "events to include (defaults to all)")
-    List<String> eventTypes;
-
-    @Parameters(arity = "1", index = "0", paramLabel = "JFR_FILE", description = "JFR file to convert")
-    Path jfrFile;
-
-    @Parameters(arity = "0..1", index = "1", paramLabel = "CTF_FILE", description = "Result file to write (defaults to JFR_FILE with json extension)")
-    Path ctfFile;
-
     public static void main(String[] args) throws Exception {
-        Jfr2Ctf converter = new Jfr2Ctf();
+        CliArgs cliArgs = new CliArgs();
         try {
-            new CommandLine(converter).parseArgs(args);
-            converter.convertJfrToCtf();
+            new CommandLine(cliArgs).parseArgs(args);
+            if (cliArgs.help) {
+                CommandLine.usage(cliArgs, System.out);
+                return;
+            }
+            new Jfr2Ctf().convertJfrToCtf(cliArgs);
         } catch (CommandLine.PicocliException e) {
             System.err.println(e.getMessage());
             System.err.println();
-            CommandLine.usage(converter, System.err);
+            CommandLine.usage(args, System.err);
             System.exit(1);
         }
     }
 
-    private void convertJfrToCtf() throws IOException {
-        if (help) {
-            CommandLine.usage(this, System.out);
-            return;
-        }
-        var eventTypeFilter = toEventTypeFilter();
-        var ctfFile = this.ctfFile == null
-                ? jfrFile.resolveSibling(substringBeforeLast(jfrFile.getFileName().toString(), ".") + ".json")
-                : this.ctfFile;
+    private void convertJfrToCtf(CliArgs args) throws IOException {
+        var eventTypeFilter = toEventTypeFilter(args);
+        var ctfFile = args.ctfFile == null
+                ? args.jfrFile.resolveSibling(substringBeforeLast(args.jfrFile.getFileName().toString(), ".") + ".json")
+                : args.ctfFile;
         var seenThreadIds = new HashSet<>();
         long pid = 0;
-        try (var reader = new RecordingFile(jfrFile); var writer = new ChromeTraceFileWriter(ctfFile)) {
+        try (var reader = new RecordingFile(args.jfrFile); var writer = new ChromeTraceFileWriter(ctfFile)) {
             while (reader.hasMoreEvents()) {
                 var event = reader.readEvent();
                 if (eventTypeFilter.test(event.getEventType())) {
@@ -133,9 +113,9 @@ public class Jfr2Ctf {
         return chromeTraceEvent.build();
     }
 
-    private Predicate<EventType> toEventTypeFilter() {
-        return eventTypes == null
+    private Predicate<EventType> toEventTypeFilter(CliArgs args) {
+        return args.eventTypes == null
                 ? __ -> true
-                : eventType -> eventTypes.contains(eventType.getName());
+                : eventType -> args.eventTypes.contains(eventType.getName());
     }
 }
