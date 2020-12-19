@@ -39,7 +39,8 @@ class CompleteEventConverter implements EventConverter {
                 .name(event.getEventType().getLabel())
                 .categories(String.join(",", event.getEventType().getCategoryNames()))
                 .timestamp(MICROS.between(Instant.EPOCH, event.getStartTime()))
-                .duration(TimeUnit.NANOSECONDS.toMicros(event.getDuration().toNanos()));
+                .duration(TimeUnit.NANOSECONDS.toMicros(event.getDuration().toNanos()))
+                .putArguments("eventType", event.getEventType().getName());
         event.getFields().stream()
                 .filter(desc -> SUPPORTED_VALUE_TYPES.containsKey(desc.getTypeName()))
                 .filter(desc -> !EXCLUDED_VALUE_NAMES.contains(desc.getName()))
