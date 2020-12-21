@@ -37,15 +37,15 @@ public class Cli {
     }
 
     private static void run(Args args) throws IOException {
-        var filter = ImmutableRecordedEventFilter.builder()
-                .includedEventTypes(args.includedEventTypes)
-                .excludedThreadNames(args.excludedThreadNames == null
+        var filter = new RecordedEventFilter(
+                args.includedEventTypes,
+                args.excludedThreadNames == null
                         ? null
-                        : args.excludedThreadNames.stream().map(Pattern::compile).collect(toSet()))
-                .minDuration(args.minDurationMillis == null
+                        : args.excludedThreadNames.stream().map(Pattern::compile).collect(toSet()),
+                args.minDurationMillis == null
                         ? null
-                        : Duration.ofMillis(args.minDurationMillis))
-                .build();
+                        : Duration.ofMillis(args.minDurationMillis)
+        );
         var ctfFile = args.ctfFile == null
                 ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
                 : args.ctfFile;

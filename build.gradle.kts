@@ -28,16 +28,19 @@ dependencies {
 
 application {
     mainClass.set("de.marcphilipp.jfr2ctf.Cli")
+    applicationDefaultJvmArgs = listOf("--enable-preview")
 }
 
 tasks {
     compileJava {
         options.apply {
+            compilerArgs.add("--enable-preview")
             compilerArgs.add("-Aimmutables.gradle.incremental")
             release.set(15)
         }
     }
     test {
         useJUnitPlatform()
+        jvmArgs("--enable-preview")
     }
 }
