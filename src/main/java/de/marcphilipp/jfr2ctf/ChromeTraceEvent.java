@@ -3,49 +3,47 @@ package de.marcphilipp.jfr2ctf;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.immutables.value.Value.Immutable;
+import io.soabase.recordbuilder.core.RecordBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
-@Immutable
+@RecordBuilder
 @JsonInclude(NON_EMPTY)
-interface ChromeTraceEvent {
+record ChromeTraceEvent(
 
-    @Nullable
-    @JsonProperty("name")
-    String getName();
+        @Nullable
+        @JsonProperty("name")
+        String name,
 
-    @JsonProperty("ph")
-    PhaseType getPhaseType();
+        @JsonProperty("ph")
+        PhaseType phaseType,
 
-    @Nullable
-    @JsonProperty("ts")
-    Long getTimestamp();
+        @Nullable
+        @JsonProperty("ts")
+        Long timestamp,
 
-    @Nullable
-    @JsonProperty("dur")
-    Long getDuration();
+        @Nullable
+        @JsonProperty("dur")
+        Long duration,
 
-    @JsonProperty("pid")
-    long getProcessId();
+        @JsonProperty("pid")
+        long processId,
 
-    @Nullable
-    @JsonProperty("id")
-    Long getId();
+        @Nullable
+        @JsonProperty("tid")
+        Long threadId,
 
-    @Nullable
-    @JsonProperty("tid")
-    Long getThreadId();
+        @Nullable
+        @JsonProperty("cat")
+        String categories,
 
-    @Nullable
-    @JsonProperty("cat")
-    String getCategories();
+        @JsonProperty("args")
+        Map<String, Object> arguments
 
-    @JsonProperty("args")
-    Map<String, Object> getArguments();
+) {
 
     enum PhaseType {
         METADATA("M"),

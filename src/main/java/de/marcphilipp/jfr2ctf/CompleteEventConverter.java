@@ -2,10 +2,12 @@ package de.marcphilipp.jfr2ctf;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +34,7 @@ class CompleteEventConverter implements EventConverter {
     @Nullable
     @Override
     public ChromeTraceEvent apply(RecordedEvent event) {
-        var chromeTraceEvent = ImmutableChromeTraceEvent.builder()
+        return ChromeTraceEventBuilder.builder()
                 .processId(PID)
                 .threadId(event.getThread() == null ? null : event.getThread().getJavaThreadId())
                 .phaseType(ChromeTraceEvent.PhaseType.COMPLETE)
@@ -40,16 +42,22 @@ class CompleteEventConverter implements EventConverter {
                 .categories(String.join(",", event.getEventType().getCategoryNames()))
                 .timestamp(MICROS.between(Instant.EPOCH, event.getStartTime()))
                 .duration(TimeUnit.NANOSECONDS.toMicros(event.getDuration().toNanos()))
-                .putArguments("eventType", event.getEventType().getName());
+                .arguments(toArguments(event))
+                .build();
+    }
+
+    private Map<String, Object> toArguments(RecordedEvent event) {
+        var arguments = new HashMap<String, Object>();
+        arguments.put("eventType", event.getEventType().getName());
         event.getFields().stream()
                 .filter(desc -> SUPPORTED_VALUE_TYPES.containsKey(desc.getTypeName()))
                 .filter(desc -> !EXCLUDED_VALUE_NAMES.contains(desc.getName()))
                 .forEach(desc -> {
                     Object value = SUPPORTED_VALUE_TYPES.get(desc.getTypeName()).apply(event, desc.getName());
                     if (value != null) {
-                        chromeTraceEvent.putArguments(desc.getName(), value);
+                        arguments.put(desc.getName(), value);
                     }
                 });
-        return chromeTraceEvent.build();
+        return arguments;
     }
 }

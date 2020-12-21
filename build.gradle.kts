@@ -13,15 +13,12 @@ repositories {
 dependencies {
     compileOnly("org.jetbrains:annotations:16.0.2")
 
-    val immutablesVersion = "2.8.2"
-    annotationProcessor("org.immutables:value:${immutablesVersion}")
-    compileOnly("org.immutables:value:${immutablesVersion}:annotations")
-    compileOnly("javax.annotation:javax.annotation-api:1.3.2") {
-        because("otherwise the generated classes are shown as having compile errors in IDEA")
-    }
+    val recordBuilderVersion = "1.14.ea"
+    annotationProcessor("io.soabase.record-builder:record-builder-processor:${recordBuilderVersion}")
+    compileOnly("io.soabase.record-builder:record-builder-core:${recordBuilderVersion}")
 
     implementation("info.picocli:picocli:4.5.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.11.3")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.12.0")
     implementation("org.apache.commons:commons-lang3:3.11")
     implementation("commons-io:commons-io:2.8.0")
 }
@@ -34,8 +31,8 @@ application {
 tasks {
     compileJava {
         options.apply {
+            forkOptions.jvmArgs = listOf("--enable-preview")
             compilerArgs.add("--enable-preview")
-            compilerArgs.add("-Aimmutables.gradle.incremental")
             release.set(15)
         }
     }

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 class ThreadMetadataEventConverter implements EventConverter {
@@ -24,12 +25,12 @@ class ThreadMetadataEventConverter implements EventConverter {
                 threadName += " (" + threadGroup.getName() + ")";
             }
             if (seenThreadIds.add(threadId) && threadName != null) {
-                return ImmutableChromeTraceEvent.builder()
+                return ChromeTraceEventBuilder.builder()
                         .processId(PID)
                         .threadId(threadId)
                         .phaseType(ChromeTraceEvent.PhaseType.METADATA)
                         .name("thread_name")
-                        .putArguments("name", threadName)
+                        .arguments(Map.of("name", threadName))
                         .build();
             }
         }

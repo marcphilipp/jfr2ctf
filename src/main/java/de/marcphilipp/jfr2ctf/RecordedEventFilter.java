@@ -1,5 +1,6 @@
 package de.marcphilipp.jfr2ctf;
 
+import io.soabase.recordbuilder.core.RecordBuilder;
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedThread;
@@ -10,6 +11,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+@RecordBuilder
 record RecordedEventFilter(@Nullable Set<String> includedEventTypes, @Nullable Set<Pattern> excludedThreadNames, @Nullable Duration minDuration) implements Predicate<RecordedEvent> {
 
     @Override
