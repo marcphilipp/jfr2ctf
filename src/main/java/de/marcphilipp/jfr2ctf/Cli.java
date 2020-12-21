@@ -9,10 +9,10 @@ import picocli.CommandLine.PicocliException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
@@ -49,8 +49,11 @@ public class Cli {
         var ctfFile = args.ctfFile == null
                 ? args.jfrFile.resolveSibling(removeExtension(args.jfrFile.getFileName().toString()) + ".json")
                 : args.ctfFile;
-        new Jfr2CtfConverter(filter).convert(args.jfrFile, ctfFile);
-        System.out.println("Wrote Chrome trace file to " + ctfFile);
+        var result = new Jfr2CtfConverter(filter).convert(args.jfrFile, ctfFile);
+        System.out.println(MessageFormat.format("Wrote Chrome trace file to {0} including {1} of {2} events",
+                ctfFile,
+                result.includedEvents(),
+                result.totalEvents()));
     }
 
     @Command(name = "jfr2ctf")
