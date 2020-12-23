@@ -1,5 +1,6 @@
 package de.marcphilipp.jfr2ctf;
 
+import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static java.time.temporal.ChronoUnit.MICROS;
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 class CompleteEventConverter implements EventConverter {
 
@@ -37,12 +39,19 @@ class CompleteEventConverter implements EventConverter {
                 .processId(PID)
                 .threadId(event.getThread() == null ? null : event.getThread().getJavaThreadId())
                 .phaseType(ChromeTraceEvent.PhaseType.COMPLETE)
-                .name(event.getEventType().getLabel())
+                .name(toName(event.getEventType()))
                 .categories(String.join(",", event.getEventType().getCategoryNames()))
                 .timestamp(MICROS.between(Instant.EPOCH, event.getStartTime()))
                 .duration(TimeUnit.NANOSECONDS.toMicros(event.getDuration().toNanos()))
                 .arguments(toArguments(event))
                 .build();
+    }
+
+    private String toName(EventType eventType) {
+        if (eventType.getLabel() != null) {
+            return eventType.getLabel();
+        }
+        return substringAfterLast(eventType.getName(), ".");
     }
 
     private Map<String, Object> toArguments(RecordedEvent event) {
