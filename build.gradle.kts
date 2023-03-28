@@ -3,7 +3,7 @@ plugins {
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(15))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
 }
 
 repositories {
@@ -13,7 +13,7 @@ repositories {
 dependencies {
     compileOnly("org.jetbrains:annotations:16.0.2")
 
-    val recordBuilderVersion = "1.14.ea"
+    val recordBuilderVersion = "35"
     annotationProcessor("io.soabase.record-builder:record-builder-processor:${recordBuilderVersion}")
     compileOnly("io.soabase.record-builder:record-builder-core:${recordBuilderVersion}")
 
@@ -30,14 +30,9 @@ application {
 
 tasks {
     compileJava {
-        options.apply {
-            forkOptions.jvmArgs = listOf("--enable-preview")
-            compilerArgs.add("--enable-preview")
-            release.set(15)
-        }
+        options.release.set(17)
     }
     test {
         useJUnitPlatform()
-        jvmArgs("--enable-preview")
     }
 }
